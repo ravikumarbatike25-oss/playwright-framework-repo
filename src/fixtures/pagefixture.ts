@@ -1,6 +1,6 @@
 import { Homepage } from "../pages/HomePage";
 import { LoginPage } from "../pages/LoginPage";
-import { SearchPage } from "../pages/Searchpage";
+import { SearchPage } from "../pages/SearchPage";
 import { test as basepage } from "@playwright/test";
 import { CsvHelper } from "../Utils/csvHelpers";
 import path from "node:path";
