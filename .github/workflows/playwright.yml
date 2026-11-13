@@ -1,0 +1,100 @@
+name: Playwright Tests
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      env_name:
+        description: "Environment file to load (config/.env.<name>)"
+        required: false
+        default: "qa"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Run Playwright tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      CI: "true"
+      ENV: ${{ github.event.inputs.env_name || 'qa' }}
+      # config/.env.* files are git-ignored, so values come from repository secrets.
+      # dotenv never overrides variables that already exist, so these take effect.
+      Base_URL: ${{ secrets.BASE_URL }}
+      LOGIN_Username: ${{ secrets.LOGIN_USERNAME }}
+      LOGIN_Password: ${{ secrets.LOGIN_PASSWORD }}
+      API_BASE_URL: ${{ secrets.API_BASE_URL }}
+      API_TOKEN: ${{ secrets.API_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      # Allure's command-line tool is a Java program
+      - name: Set up Java (for Allure)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      # playwright.config.ts sets headless: false, so give the browser a virtual display
+      - name: Run Playwright tests
+        run: xvfb-run --auto-servernum -- npx playwright test --project=chromium
+
+      - name: Generate Allure report
+        if: ${{ !cancelled() }}
+        run: npx allure generate allure-results --clean -o allure-report
+
+      - name: Upload Playwright HTML report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-html-report
+          path: reports/html-report/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Upload Allure report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report
+          path: allure-report/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Upload raw Allure results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results
+          path: allure-results/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Upload traces, screenshots and videos
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results/
+          retention-days: 14
+          if-no-files-found: ignore
