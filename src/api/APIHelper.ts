@@ -18,7 +18,7 @@ export class APIHelper {
         }
 
     }
-
+    
     // POST request
     async post(endpoint: string, data: object, headers?: Record<string, string>) {
         const response = await this.request.post(`${this.baseUrl}${endpoint}`, {data : data, headers : headers ?? {}});

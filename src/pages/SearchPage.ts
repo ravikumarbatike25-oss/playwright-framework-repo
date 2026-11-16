@@ -1,5 +1,5 @@
 import {BasePage} from "./BasePage";
-import type { Locator, Page } from "@playwright/test";
+import { Locator, Page } from "@playwright/test";
 
 export class SearchPage extends BasePage{
     private readonly searchHeader : Locator;

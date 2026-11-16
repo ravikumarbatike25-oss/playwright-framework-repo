@@ -32,8 +32,10 @@ test ('test number of headers', async({ homePage })=>{
     expect(headers).toEqual(['My Account', 'My Orders', 'My Affiliate Account', 'Newsletter']);
 });
 
-test('test search field box', async({ homePage })=>{
-  expect(await homePage.verifysearchfieldbox('macbook')).toBeTruthy();
+test('test search field box', async ({ homePage, page }) => {
+  const searchText = 'macbook';
+  await homePage.verifysearchfieldbox(searchText);
+  await expect(page.getByPlaceholder('Search')).toHaveValue(searchText);
 });
 
 test('test search for product', async({homePage})=>{
